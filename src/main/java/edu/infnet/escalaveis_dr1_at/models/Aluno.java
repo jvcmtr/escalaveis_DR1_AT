@@ -1,39 +1,35 @@
 package edu.infnet.escalaveis_dr1_at.models;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
-import jakarta.persistence.Column;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
-import lombok.Getter;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 @Entity
-@Getter
-@Setter
+@Data
 @NoArgsConstructor
-public class Professor{
+@AllArgsConstructor
+public class Aluno {
+    
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    @Column(unique = true)
-    private String email;
-    private String senha;
-
+    
     private String nome;
-    private String roles;
+    private String cpf;
+    private String email;
+    private String telefone;
+    private String endereco;
 
-    @OneToMany(mappedBy = "professor")
-    private List<Disciplina> disciplinas = new ArrayList<>();
-
-    public List<String> getRolesAsList() {
-        return Arrays.asList(roles.split(","));
-    }
+    
+    @OneToMany(mappedBy = "aluno", cascade = CascadeType.ALL)
+    private List<Inscricao> inscricoes = new ArrayList<>();
 }
