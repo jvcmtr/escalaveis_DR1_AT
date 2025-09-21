@@ -1,0 +1,15 @@
+name: Deploy AT
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Init
+        uses: actions/setup-java@v3
+        with:
+          java-version: '21'
+      - name: Build
+        run: mvn clean package

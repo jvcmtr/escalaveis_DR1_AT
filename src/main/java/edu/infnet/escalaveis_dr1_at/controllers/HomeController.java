@@ -16,14 +16,9 @@ public class HomeController {
         return  "LOGIN BEM SUCEDIDO!\n\n<script> window.location.href = \"/home.html\"; </script>" ;
     }
 
-    @GetMapping("/api/")
-    public String apiHome() {
-        return "Pong";
-    }
-
     @GetMapping("/ping")
     public String ping() {
-        return "Pong";
+        return "pong";
     }
 
     @GetMapping("/auth-ping")
