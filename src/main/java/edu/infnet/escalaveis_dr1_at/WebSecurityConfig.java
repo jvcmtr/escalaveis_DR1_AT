@@ -36,6 +36,7 @@ public class WebSecurityConfig {
 
                     // Home e Ping
                     "/",
+                    "/home.html",
                     "/ping",
                     "/api/"
                 ).permitAll() 
