@@ -3,14 +3,33 @@ name: Deploy AT
 on: [push, pull_request]
 
 jobs:
-  build:
+  build-test-deploy:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v3
-      - name: Init
-        uses: actions/setup-java@v3
-        with:
-          distribution: 'temurin' 
-          java-version: '21'
-      - name: Build
-        run: mvn clean package
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up JDK 21
+      uses: actions/setup-java@v3
+      with:
+        distribution: temurin
+        java-version: 21
+
+    - name: Build 
+      run: mvn clean package
+
+    - name: Teste
+      run: mvn test
+
+    - name: Deploy no Render
+      env:
+        RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+        RENDER_SERVICE_ID: ${{ secrets.RENDER_SERVICE_ID }}
+      run: |
+        curl -X POST \
+          -H "Authorization: Bearer $RENDER_API_KEY" \
+          -H "Content-Type: application/json" \
+          -F "file=@.target/escalaveis_dr1_at-0.0.1-SNAPSHOT.jar" \
+          -d '{}' \
+          https://api.render.com/deploy/$RENDER_SERVICE_ID
