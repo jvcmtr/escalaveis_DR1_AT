@@ -23,7 +23,7 @@ public class AuthController {
     @Autowired
     private BCryptPasswordEncoder encoder;
 
-
+    
     @PostMapping("/register")
     public ResponseEntity<Object> register(@RequestBody Professor professor) {
         

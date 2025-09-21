@@ -1,5 +1,6 @@
 package edu.infnet.escalaveis_dr1_at.controllers;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -25,15 +26,9 @@ import static edu.infnet.escalaveis_dr1_at.services.FilterService.filterAlunoByA
 import static edu.infnet.escalaveis_dr1_at.services.FilterService.filterAlunoByDisciplina;
 import static edu.infnet.escalaveis_dr1_at.services.FilterService.filterAlunoByNome;
 
-
 @RestController
 @RequestMapping("/api/alunos")
 public class AlunoController {
-
-    @GetMapping("/ping")
-    public String register() {
-        return "Pong = AlunosController";
-    }
 
     @Autowired private AlunoRepository AlunoRepository;
     @Autowired private DisciplinaRepository DisciplinaRepository;
@@ -45,23 +40,33 @@ public class AlunoController {
     }
 
     @GetMapping
-    public List<Aluno> getAllAlunos(
-        @RequestParam(required = false) long disciplina, 
+    public ResponseEntity<Object> getAllAlunos(
+        @RequestParam(required = false) Long id_disciplina, 
         @RequestParam(required = false) String nome,
         @RequestParam(required = false) Boolean aprovado){
+
+        // return ResponseEntity.ok(aprovado.toString());            
     
-            return AlunoRepository.findAll().stream()
-                .filter( filterAlunoByNome(nome))
-                .filter( filterAlunoByDisciplina(disciplina))
-                .filter( filterAlunoByAprovacao(aprovado))
-                .toList();
+            return ResponseEntity.ok(
+                AlunoRepository.findAll().stream()
+                    .filter( filterAlunoByNome(nome))
+                    .filter( filterAlunoByDisciplina(id_disciplina))
+                    .filter( filterAlunoByAprovacao(aprovado, id_disciplina))
+                    .map(a -> removeRefCircular(a))
+                    .toList()
+            );
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<Aluno> getAlunoById(@PathVariable Long id) {
-        Optional<Aluno> Aluno = AlunoRepository.findById(id);
-        return Aluno.map(ResponseEntity::ok)
-                   .orElse(ResponseEntity.notFound().build());
+        var a = AlunoRepository.findById(id);
+
+        if(a.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        var aluno = a.get();
+
+        return ResponseEntity.ok( removeRefCircular(aluno));
     }
 
     @PutMapping("/{id}")
@@ -80,7 +85,7 @@ public class AlunoController {
         Aluno.setEndereco(AlunoDetails.getEndereco());
 
         Aluno updatedAluno = AlunoRepository.save(Aluno);
-        return ResponseEntity.ok(updatedAluno);
+        return ResponseEntity.ok( removeRefCircular(updatedAluno) );
     }
 
     @DeleteMapping("/{id}")
@@ -96,8 +101,8 @@ public class AlunoController {
     public ResponseEntity<Object> martricularAluno(@PathVariable Long id_aluno, @RequestParam Long id_disciplina) {
 
         // Valida se as entidades existem
-        Optional<Aluno> optionalAluno = AlunoRepository.findById(id_aluno);
-        Optional<Disciplina> optionalDisciplina = DisciplinaRepository.findById(id_disciplina);
+        var optionalAluno = AlunoRepository.findById(id_aluno);
+        var optionalDisciplina = DisciplinaRepository.findById(id_disciplina);
         
         if (optionalAluno.isEmpty()) {
             return ResponseEntity.notFound().build();
@@ -107,8 +112,8 @@ public class AlunoController {
             return ResponseEntity.notFound().build();
         }
 
-        Aluno aluno = optionalAluno.get();
-        Disciplina disciplina = optionalDisciplina.get();
+        var aluno = optionalAluno.get();
+        var disciplina = optionalDisciplina.get();
         
         // Valida se o aluno ja esta matriculado
         Boolean matriculado = aluno.getInscricoes().stream()
@@ -120,15 +125,13 @@ public class AlunoController {
         }
 
         // Cria a inscricao no banco
-        Inscricao inscricao = new Inscricao();
+        var inscricao = new Inscricao();
         inscricao.setAluno(aluno);
         inscricao.setDisciplina(disciplina);
 
         aluno.getInscricoes().add(inscricao);
-        disciplina.getInscricoes().add(inscricao);
 
-        AlunoRepository.save(aluno);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok( removeRefCircular( AlunoRepository.save(aluno))  );
     }
 
     
@@ -144,15 +147,15 @@ public class AlunoController {
         }
 
         // Valida se o aluno existe
-        Optional<Aluno> optionalAluno = AlunoRepository.findById(id_aluno);
+        var optionalAluno = AlunoRepository.findById(id_aluno);
         if (optionalAluno.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
 
-        Aluno aluno = optionalAluno.get();
+        var aluno = optionalAluno.get();
 
         // Valida se o aluno é matriculado na disciplina
-        Optional<Inscricao> optionalInscricao = aluno.getInscricoes().stream()
+        var optionalInscricao = aluno.getInscricoes().stream()
             .filter(i -> i.getDisciplina().getId().equals(id_disciplina))
             .findFirst();
         if (optionalInscricao.isEmpty()) {
@@ -163,8 +166,24 @@ public class AlunoController {
         Inscricao inscricao = optionalInscricao.get();
         inscricao.setNota(nota);
 
-        AlunoRepository.save(aluno);
+        return ResponseEntity.ok( removeRefCircular( AlunoRepository.save(aluno))  );
+    }
 
-        return ResponseEntity.ok().build();
+    private Aluno removeRefCircular(Aluno aluno) {
+
+        var inscricoes = aluno.getInscricoes();
+        for (var i : inscricoes) {
+
+            // corrige aluno.inscricoes[0].aluno
+            var a = new Aluno();
+            a.setId(aluno.getId());
+            i.setAluno(a);
+
+            // corrige aluno.inscricoes[0].disciplina.inscricoes[0].aluno
+            var disciplina = i.getDisciplina();
+            disciplina.setInscricoes(new ArrayList<>());
+        }
+        
+        return aluno;
     }
 }

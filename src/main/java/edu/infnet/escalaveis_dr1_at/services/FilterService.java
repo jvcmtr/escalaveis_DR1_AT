@@ -14,17 +14,18 @@ public class FilterService {
     }
 
     public static final Predicate<Aluno> filterAlunoByDisciplina(Long disciplina_id){
-        return disciplina_id == 0? 
+        return disciplina_id == null? 
             a -> true : 
             a -> a.getInscricoes().stream()
             .map(Inscricao::getDisciplina)
             .anyMatch(d -> d.getId().equals(disciplina_id));
     }
 
-    public static final Predicate<Aluno> filterAlunoByAprovacao(Boolean aprovado){
+    public static final Predicate<Aluno> filterAlunoByAprovacao(Boolean aprovado, Long disciplina_id){
         return aprovado == null? 
             a -> true : 
             a -> a.getInscricoes().stream()
+            .filter(i -> disciplina_id == null? true : i.getDisciplina().getId().equals(disciplina_id))
             .map(Inscricao::getNota)
             .anyMatch(n -> n != null && (aprovado? n >= 7 : n < 7));
     }

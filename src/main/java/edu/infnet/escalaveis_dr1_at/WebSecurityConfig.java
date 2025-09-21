@@ -25,7 +25,20 @@ public class WebSecurityConfig {
         http
             .csrf().disable()
             .authorizeHttpRequests()
-                .requestMatchers("/api/auth/**").permitAll()
+            .requestMatchers(
+                    // Autenticação
+                    "/api/auth/**",
+
+                    // Documentação
+                    "/swagger-ui/index.html", 
+                    "/swagger-ui.html", 
+                    "v3/api-docs",
+
+                    // Home e Ping
+                    "/",
+                    "/ping",
+                    "/api/"
+                ).permitAll() 
                 .anyRequest().authenticated()
             .and()
                 .formLogin()
