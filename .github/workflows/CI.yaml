@@ -10,6 +10,7 @@ jobs:
       - name: Init
         uses: actions/setup-java@v3
         with:
+          distribution: 'temurin' 
           java-version: '21'
       - name: Build
         run: mvn clean package
